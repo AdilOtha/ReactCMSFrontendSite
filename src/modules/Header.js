@@ -22,28 +22,37 @@ import {
   ChevronDownIcon,
   ChevronRightIcon,
 } from '@chakra-ui/icons';
+import {Link as RouterLink} from "react-router-dom"
+import { useHistory } from 'react-router';
+import { apiUrl } from '../helpers/apiUrl';
+import auth from "../services/Auth";
 
-import axios from 'axios';
+import axios from '../interceptors/auth.interceptor';
 
-require('dotenv').config();
-
-export default function Header() {
-  const apiUrl = process.env.NODE_ENV === 'production' ? process.env.REACT_APP_PROD_API_URL : process.env.REACT_APP_DEV_API_URL;
+export default function Header(props) {
+  const history = useHistory();
 
   const { isOpen, onToggle } = useDisclosure();
 
-  const [menuItems, setMenuItems] = useState([]);
+  const [mainMenuItems, setMainMenuItems] = useState([]);
 
-  useEffect(() => {
-    axios.get(apiUrl + "/api/menu-items")
+  useEffect(() => {    
+    axios.get(apiUrl + "/api/site/menus/main-menu/60fed7e2f7baeb22e00a91f7")
       .then(res => {
         console.log(res);
-        setMenuItems(res.data);
+        setMainMenuItems(res.data);
       })
       .catch(err => {
         console.log(err);
       });
-  }, [apiUrl]);
+  }, []);
+
+  const logout = ()=>{
+    localStorage.removeItem("token");
+    auth.logout(()=>{
+      history.go(0);
+    });
+  };
 
 
   return (
@@ -80,7 +89,7 @@ export default function Header() {
           </Text>
 
           <Flex display={{ base: 'none', md: 'flex' }} ml={10}>
-            <DesktopNav />
+            <DesktopNav mainMenuItems={mainMenuItems} />
           </Flex>
         </Flex>
 
@@ -89,15 +98,20 @@ export default function Header() {
           justify={'flex-end'}
           direction={'row'}
           spacing={6}>
-          <Button
-            as={'a'}
+          {auth.isAuthenticated() ? (<Button
+            fontSize={'sm'}
+            fontWeight={500}
+            onClick={logout}
+            bg={'gray.300'}>
+            Logout
+          </Button>) : (<Button
+            as={RouterLink}
             fontSize={'sm'}
             fontWeight={400}
-            variant={'link'}
-            href={'#'}>
+            to={'/login'}>
             Sign In
-          </Button>
-          <Button
+          </Button>)}
+          {/* <Button
             display={{ base: 'none', md: 'inline-flex' }}
             fontSize={'sm'}
             fontWeight={600}
@@ -108,26 +122,27 @@ export default function Header() {
               bg: 'teal.300',
             }}>
             Sign Up
-          </Button>
+          </Button> */}
         </Stack>
       </Flex>
 
       <Collapse in={isOpen} animateOpacity>
-        <MobileNav />
+        <MobileNav mainMenuItems={mainMenuItems} />
       </Collapse>
     </Box>
   );
 }
 
-const DesktopNav = () => {
+const DesktopNav = (props) => {
+  const {mainMenuItems} = props;
   const linkColor = useColorModeValue('gray.600', 'gray.200');
   const linkHoverColor = useColorModeValue('gray.800', 'white');
   const popoverContentBgColor = useColorModeValue('white', 'gray.800');
 
   return (
     <Stack direction={'row'} spacing={4}>
-      {NAV_ITEMS.map((navItem) => (
-        <Box key={navItem.label}>
+      {mainMenuItems.map((navItem) => (
+        <Box key={navItem.name}>
           <Popover trigger={'hover'} placement={'bottom-start'}>
             <PopoverTrigger>
               <Link
@@ -140,7 +155,7 @@ const DesktopNav = () => {
                   textDecoration: 'none',
                   color: linkHoverColor,
                 }}>
-                {navItem.label}
+                {navItem.name}
               </Link>
             </PopoverTrigger>
 
@@ -200,14 +215,15 @@ const DesktopSubNav = ({ label, href, subLabel }) => {
   );
 };
 
-const MobileNav = () => {
+const MobileNav = (props) => {
+  const {mainMenuItems} = props;
   return (
     <Stack
       bg={useColorModeValue('white', 'gray.800')}
       p={4}
       display={{ md: 'none' }}>
-      {NAV_ITEMS.map((navItem) => (
-        <MobileNavItem key={navItem.label} {...navItem} />
+      {mainMenuItems.map((navItem) => (
+        <MobileNavItem key={navItem.name} {...navItem} />
       ))}
     </Stack>
   );
