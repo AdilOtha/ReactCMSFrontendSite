@@ -22,7 +22,7 @@ import {
   ChevronDownIcon,
   ChevronRightIcon,
 } from '@chakra-ui/icons';
-import {Link as RouterLink} from "react-router-dom"
+import { Link as RouterLink } from "react-router-dom"
 import { useHistory } from 'react-router';
 import { apiUrl } from '../helpers/apiUrl';
 import auth from "../services/Auth";
@@ -36,20 +36,22 @@ export default function Header(props) {
 
   const [mainMenuItems, setMainMenuItems] = useState([]);
 
-  useEffect(() => {    
-    axios.get(apiUrl + "/api/site/menus/main-menu/60fed7e2f7baeb22e00a91f7")
+  useEffect(() => {
+    axios.get(apiUrl + "/api/site/main-menu/getMainMenuItems",{userId: "60e1ca28a452c928d898d85e"})
       .then(res => {
         console.log(res);
-        setMainMenuItems(res.data);
+        if(res.data){
+          setMainMenuItems(res.data);
+        }
       })
       .catch(err => {
         console.log(err);
       });
   }, []);
 
-  const logout = ()=>{
+  const logout = () => {
     localStorage.removeItem("token");
-    auth.logout(()=>{
+    auth.logout(() => {
       history.go(0);
     });
   };
@@ -134,20 +136,26 @@ export default function Header(props) {
 }
 
 const DesktopNav = (props) => {
-  const {mainMenuItems} = props;
+  const { mainMenuItems } = props;
   const linkColor = useColorModeValue('gray.600', 'gray.200');
   const linkHoverColor = useColorModeValue('gray.800', 'white');
   const popoverContentBgColor = useColorModeValue('white', 'gray.800');
 
   return (
     <Stack direction={'row'} spacing={4}>
-      {mainMenuItems.map((navItem) => (
-        <Box key={navItem.name}>
+      {mainMenuItems.map((navItem) => {
+        if (navItem.typeArticle) {
+          navItem.urlPath = `/articles/${navItem.typeArticle._id}`;
+        } else {
+          navItem.urlPath = '#'
+        }
+        return (<Box key={navItem._id}>
           <Popover trigger={'hover'} placement={'bottom-start'}>
             <PopoverTrigger>
               <Link
+                as={RouterLink}
                 p={2}
-                href={navItem.href ?? '#'}
+                to={navItem.urlPath}
                 fontSize={'sm'}
                 fontWeight={500}
                 color={linkColor}
@@ -159,7 +167,7 @@ const DesktopNav = (props) => {
               </Link>
             </PopoverTrigger>
 
-            {navItem.children && (
+            {navItem.typeDropDown.length > 0 && (
               <PopoverContent
                 border={0}
                 boxShadow={'xl'}
@@ -168,23 +176,29 @@ const DesktopNav = (props) => {
                 rounded={'xl'}
                 minW={'sm'}>
                 <Stack>
-                  {navItem.children.map((child) => (
-                    <DesktopSubNav key={child.label} {...child} />
-                  ))}
+                  {navItem.typeDropDown.map((child) => {
+                    if (child.typeArticle) {
+                      child.urlPath = `/articles/${child.typeArticle}`;
+                    } else {
+                      child.urlPath = '';
+                    }
+                    return (<DesktopSubNav key={child._id} {...child} />)
+                  })}
                 </Stack>
               </PopoverContent>
             )}
           </Popover>
-        </Box>
-      ))}
+        </Box>);
+      })}
     </Stack>
   );
 };
 
-const DesktopSubNav = ({ label, href, subLabel }) => {
+const DesktopSubNav = (child) => {
   return (
     <Link
-      href={href}
+      as={RouterLink}
+      to={child.urlPath}
       role={'group'}
       display={'block'}
       p={2}
@@ -196,9 +210,9 @@ const DesktopSubNav = ({ label, href, subLabel }) => {
             transition={'all .3s ease'}
             _groupHover={{ color: 'pink.400' }}
             fontWeight={500}>
-            {label}
+            {child.name}
           </Text>
-          <Text fontSize={'sm'}>{subLabel}</Text>
+          {/* <Text fontSize={'sm'}>{child.name}</Text> */}
         </Box>
         <Flex
           transition={'all .3s ease'}
@@ -216,28 +230,33 @@ const DesktopSubNav = ({ label, href, subLabel }) => {
 };
 
 const MobileNav = (props) => {
-  const {mainMenuItems} = props;
+  const { mainMenuItems } = props;
   return (
     <Stack
       bg={useColorModeValue('white', 'gray.800')}
       p={4}
       display={{ md: 'none' }}>
-      {mainMenuItems.map((navItem) => (
-        <MobileNavItem key={navItem.name} {...navItem} />
-      ))}
+      {mainMenuItems.map((navItem) => {
+        if (navItem.typeArticle) {
+          navItem.urlPath = `/articles/${navItem.typeArticle._id}`;
+        } else {
+          navItem.urlPath = '#'
+        }
+        return (<MobileNavItem key={navItem._id} {...navItem} />);
+      })}
     </Stack>
   );
 };
 
-const MobileNavItem = ({ label, children, href }) => {
+const MobileNavItem = (navItem) => {
   const { isOpen, onToggle } = useDisclosure();
 
   return (
-    <Stack spacing={4} onClick={children && onToggle}>
+    <Stack spacing={4} onClick={onToggle}>
       <Flex
         py={2}
-        as={Link}
-        href={href ?? '#'}
+        as={RouterLink}
+        to={`${navItem.urlPath}`}
         justify={'space-between'}
         align={'center'}
         _hover={{
@@ -246,9 +265,9 @@ const MobileNavItem = ({ label, children, href }) => {
         <Text
           fontWeight={600}
           color={useColorModeValue('gray.600', 'gray.200')}>
-          {label}
+          {navItem.name}
         </Text>
-        {children && (
+        {navItem.typeDropDown.length > 0 && (
           <Icon
             as={ChevronDownIcon}
             transition={'all .25s ease-in-out'}
@@ -267,12 +286,19 @@ const MobileNavItem = ({ label, children, href }) => {
           borderStyle={'solid'}
           borderColor={useColorModeValue('gray.200', 'gray.700')}
           align={'start'}>
-          {children &&
+          {/* {children &&
             children.map((child) => (
               <Link key={child.label} py={2} href={child.href}>
                 {child.label}
               </Link>
-            ))}
+            ))} */}
+          {navItem.typeDropDown.length > 0 && (
+            navItem.typeDropDown.map((child) => {
+              return (<Link as={RouterLink} key={child._id} py={2} to={`/articles/${child._id}`}>
+                {child.name}
+              </Link>)
+            })
+          )}
         </Stack>
       </Collapse>
     </Stack>
@@ -286,43 +312,43 @@ const MobileNavItem = ({ label, children, href }) => {
 //     href?: string;
 //   }
 
-const NAV_ITEMS = [
-  {
-    label: 'Inspiration',
-    children: [
-      {
-        label: 'Explore Design Work',
-        subLabel: 'Trending Design to inspire you',
-        href: '#',
-      },
-      {
-        label: 'New & Noteworthy',
-        subLabel: 'Up-and-coming Designers',
-        href: '#',
-      },
-    ],
-  },
-  {
-    label: 'Find Work',
-    children: [
-      {
-        label: 'Job Board',
-        subLabel: 'Find your dream design job',
-        href: '#',
-      },
-      {
-        label: 'Freelance Projects',
-        subLabel: 'An exclusive list for contract work',
-        href: '#',
-      },
-    ],
-  },
-  {
-    label: 'Learn Design',
-    href: '#',
-  },
-  {
-    label: 'Hire Designers',
-    href: '#',
-  },
-];
+// const NAV_ITEMS = [
+//   {
+//     label: 'Inspiration',
+//     children: [
+//       {
+//         label: 'Explore Design Work',
+//         subLabel: 'Trending Design to inspire you',
+//         href: '#',
+//       },
+//       {
+//         label: 'New & Noteworthy',
+//         subLabel: 'Up-and-coming Designers',
+//         href: '#',
+//       },
+//     ],
+//   },
+//   {
+//     label: 'Find Work',
+//     children: [
+//       {
+//         label: 'Job Board',
+//         subLabel: 'Find your dream design job',
+//         href: '#',
+//       },
+//       {
+//         label: 'Freelance Projects',
+//         subLabel: 'An exclusive list for contract work',
+//         href: '#',
+//       },
+//     ],
+//   },
+//   {
+//     label: 'Learn Design',
+//     href: '#',
+//   },
+//   {
+//     label: 'Hire Designers',
+//     href: '#',
+//   },
+// ];

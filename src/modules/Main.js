@@ -9,22 +9,25 @@ import {
     Route,
     Redirect
 } from "react-router-dom";
+import { Flex } from '@chakra-ui/react';
 
 export default function Main(props) {
     return (
         <>
-            <Header props />
-            <Switch>
-                <Route exact path="/">
-                    <Redirect to="/home" />
-                </Route>
-                <Route exact path="/home" component={Home} />
-                <Route exact path="/articles/:articleId">
-                    <Article />
-                </Route>
-                <Route path="*" component={() => "404 NOT FOUND"} />
-            </Switch>
-            <Footer />
+            <Flex direction="column" alignItems="stretch" minH="100%">
+                <Header props />
+                <Switch>
+                    <Route exact path="/">
+                        <Redirect to="/home" />
+                    </Route>
+                    <Route exact path="/home" component={Home} />
+                    <Route exact path="/articles/:articleId">
+                        <Article />
+                    </Route>
+                    <Route path="*" component={() => "404 NOT FOUND"} />
+                </Switch>
+                <Footer />
+            </Flex>
         </>
     );
 }
