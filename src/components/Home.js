@@ -13,7 +13,12 @@ import {
   Textarea,
   useToast,
 } from '@chakra-ui/react';
-import { Icon, Link as ChakraLink, Spinner, Center } from '@chakra-ui/react';
+import {
+  IconButton,
+  Link as ChakraLink,
+  Spinner,
+  Center,
+} from '@chakra-ui/react';
 import { Link as RouterLink } from 'react-router-dom';
 import { MdThumbUp, MdComment } from 'react-icons/md';
 import { apiUrl } from '../helpers/apiUrl';
@@ -212,16 +217,6 @@ const Article = props => {
             {articleData.title}
           </Link>
         </Heading>
-        {/* <Text
-                        as="p"
-                        marginTop="2"
-                        color={useColorModeValue('gray.700', 'gray.200')}
-                        fontSize="lg">
-                        Lorem Ipsum is simply dummy text of the printing and typesetting
-                        industry. Lorem Ipsum has been the industry's standard dummy text
-                        ever since the 1500s, when an unknown printer took a galley of type
-                        and scrambled it to make a type specimen book.
-                    </Text> */}
         <HStack marginTop="2" spacing="2" display="flex" alignItems="center">
           <Text>Date Posted:</Text>
           <Text>
@@ -231,9 +226,9 @@ const Article = props => {
         </HStack>
         <HStack display="flex" alignItems="center" spacing={4} marginTop={6}>
           <HStack>
-            <Icon
+            <IconButton
               title="Like"
-              as={MdThumbUp}
+              icon={<MdThumbUp />}
               color={articleData.likes.length === 0 ? 'gray.400' : 'teal.400'}
               _hover={
                 articleData.likes.length === 0
@@ -245,19 +240,19 @@ const Article = props => {
               }}
               cursor="pointer"
               boxSize={'1.5em'}
-            ></Icon>
+            ></IconButton>
             <Text>{articleData.noOfLikes}</Text>
           </HStack>
           <HStack>
-            <Icon
+            <IconButton
               title="Comment"
               onClick={toggleCommentBox}
-              as={MdComment}
+              icon={<MdComment />}
               color="gray.400"
               _hover={{ color: 'gray.500' }}
               cursor="pointer"
               boxSize={'1.5em'}
-            ></Icon>
+            ></IconButton>
             <Text>{articleData.noOfComments}</Text>
           </HStack>
         </HStack>
@@ -332,9 +327,7 @@ export default function Home() {
         console.log(err);
       })
       .finally(() => {
-        setTimeout(() => {
-          setIsLoading(false);
-        }, 500);
+        setIsLoading(false);
       });
   }, []);
 
@@ -345,7 +338,7 @@ export default function Home() {
     console.log(index);
     if (updateType === 'like' || updateType === 'toggleComment') {
       if (index !== -1) {
-        articles[index] = updatedValue;
+        articles[index].noOfLikes = updatedValue.noOfLikes;        
       }
       setArticles([...articles]);
     } else if (updateType === 'comment') {
@@ -359,6 +352,7 @@ export default function Home() {
 
   return (
     <Container maxW={'7xl'} minHeight={'83vh'} p="6">
+      <Heading as="h1">Latest Posts</Heading>
       {isLoading ? (
         <Center>
           {' '}
@@ -367,17 +361,7 @@ export default function Home() {
       ) : (
         articles &&
         articles.map((data, index) => {
-          return index === 0 ? (
-            <>
-              <Heading as="h1">Latest Posts</Heading>
-              <Article
-                key={data._id}
-                articleData={data}
-                updateArticleData={updateArticleData}
-                history={history}
-              />
-            </>
-          ) : (
+          return (
             <Article
               key={data._id}
               articleData={data}
